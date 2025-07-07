@@ -213,20 +213,27 @@ RCON() {
 # Returns 1 if not able to broadcast
 broadcast_command() {
     local return_val=0
-    if isTrue "${REST_API_ENABLED}"; then
-        local json="{\"message\":\"${1}\"}" result
+    local message="${1}"
+
+    # Use REST API whenever it is enabled or when the message contains
+    # non-ASCII characters (RCON has issues with multi-byte characters).
+    if isTrue "${REST_API_ENABLED}" || [[ "${message}" =~ [^[:ascii:]] ]]; then
+        if [[ "${message}" =~ [^[:ascii:]] ]] && ! isTrue "${REST_API_ENABLED}"; then
+            LogWarn "Unable to broadcast since the message contains non-ascii characters and REST_API_ENABLED is false: \"${message}\""
+            return 1
+        fi
+
+        local json="{\"message\":\"${message}\"}" result
         result="$(REST_API announce "${json}")"
         if [ ! "${result}" = "OK" ]; then
             return_val=1
         fi
         return "$return_val"
     fi
-    # Replaces spaces with underscore
-    local message="${1// /_}"
-    if [[ $TEXT = *[![:ascii:]]* ]]; then
-        LogWarn "Unable to broadcast since the message contains non-ascii characters: \"${message}\""
-        return_val=1
-    elif ! RCON "broadcast ${message}" > /dev/null; then
+
+    # Replaces spaces with underscore for RCON
+    local safe_message="${message// /_}"
+    if ! RCON "broadcast ${safe_message}" > /dev/null; then
         return_val=1
     fi
     return "$return_val"

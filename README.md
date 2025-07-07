@@ -344,6 +344,10 @@ For example, you can broadcast a message to everyone in the server with the foll
 docker exec -it palworld-server rcon-cli "Broadcast Hello everyone"
 ```
 
+RCON cannot send messages containing non-ASCII characters such as Traditional Chinese.
+Enable `REST_API_ENABLED` and use `rest-cli` instead if you need to broadcast
+messages with multi-byte characters.
+
 This will open a CLI that uses RCON to write commands to the Palworld Server.
 
 ### List of server commands
